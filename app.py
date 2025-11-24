@@ -15,9 +15,9 @@ def main(page: ft.Page):
     def registrar(e):
         nome_animal = animal.value
         local_perda = lost_location.value
-        desc_animal = desc_animal.value
+        descricao = desc_animal.value
 
-        novo_animal = Animal(name=nome_animal, lost_location=local_perda, desc_animal=desc_animal)
+        novo_animal = Animal(name=nome_animal, lost_location=local_perda, desc_animal=descricao)
         session.add(novo_animal)
         session.commit()
 
@@ -51,6 +51,8 @@ def main(page: ft.Page):
                 subtitle=ft.Text(f"Perdido em: {a.lost_location}\nDescrição: {a.desc_animal}")
             )
         )
+
+    page.add(lista_animais)
 
 
 
