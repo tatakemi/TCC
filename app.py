@@ -21,10 +21,23 @@ def main(page: ft.Page):
         session.add(novo_animal)
         session.commit()
 
-        animal.value = ""
-        lost_location.value = ""
-        desc_animal.value = ""
+        lista_animais.controls.append(
+            ft.Container(
+                ft.ListTile(
+                    title=ft.Text(novo_animal.name),
+                    subtitle=ft.Text(f"Perdido em: {novo_animal.lost_location}\nDescrição: {novo_animal.desc_animal}"),
+                ),
+                bgcolor=ft.Colors.BLACK12,
+                padding=15,
+                alignment=ft.alignment.center,
+                margin=3,
+                border_radius=10
+            )
+        )
         page.update()
+
+    txt_erro = ft.Container(ft.Text('Erro ao registrar o animal!'), visible=False, bgcolor=ft.colors.RED, padding=10, alignment=ft.alignment.center)
+    txt_acerto = ft.Container(ft.Text('Animal registrado com sucesso!'), visible=False, bgcolor=ft.colors.GREEN, padding=10, alignment=ft.alignment.center)
 
     txt_animal = ft.Text("Nome do Animal")
     animal = ft.TextField(label="Digite o nome do animal")
@@ -46,9 +59,16 @@ def main(page: ft.Page):
 
     for a in session.query(Animal).all():
         lista_animais.controls.append(
-            ft.ListTile(
-                title=ft.Text(a.name),
-                subtitle=ft.Text(f"Perdido em: {a.lost_location}\nDescrição: {a.desc_animal}")
+            ft.Container(
+                ft.ListTile(
+                    title=ft.Text(a.name),
+                    subtitle=ft.Text(f"Perdido em: {a.lost_location}\nDescrição: {a.desc_animal}"),
+                ),
+                bgcolor=ft.Colors.BLACK12,
+                padding=15,
+                alignment=ft.alignment.center,
+                margin=3,
+                border_radius=10
             )
         )
 
