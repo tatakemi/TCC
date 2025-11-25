@@ -1,14 +1,14 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from contextlib import contextmanager
+# Use system bcrypt (install with pip install bcrypt)
 import bcrypt
 
 CONN = 'sqlite:///siara.db'
 
 engine = create_engine(CONN, echo=True)
 Session = sessionmaker(bind=engine)
-# a long-lived session used by simple apps (you may prefer to use session_scope() everywhere)
 session = Session()
 Base = declarative_base()
 
@@ -63,10 +63,14 @@ class LostAnimal(Base):
     __tablename__ = 'lost_animals'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    species = Column(String)             # optional
+    species = Column(String)
     lost_location = Column(String)
     desc_animal = Column(String)
-    contact = Column(String)             # contact (if provided)
+    contact = Column(String)
+
+    # new location fields
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
 
     owner_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     owner = relationship("User", back_populates="lost_animals")
@@ -82,11 +86,15 @@ class FoundReport(Base):
     found_location = Column(String)
     found_date = Column(String)
 
+    # new location fields
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+
     finder_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     finder = relationship("User", back_populates="found_reports")
 
     def __repr__(self):
         return f"<FoundReport(id={self.id}, found_location='{self.found_location}', finder_id={self.finder_id})>"
 
-# Ensure tables exist
+# Ensure tables exist / create new columns for newly created DBs
 Base.metadata.create_all(engine)
