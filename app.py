@@ -90,7 +90,7 @@ class MapHandler(SimpleHTTPRequestHandler):
                 with session_scope() as s:
                     for a in s.query(LostAnimal).all():
                         reports.append({
-                            "type": "lost",
+                            "type": "Animal perdido",
                             "title": a.name,
                             "desc": f"{a.desc_animal or ''} ({a.lost_location or ''})",
                             "lat": a.latitude,
@@ -99,7 +99,7 @@ class MapHandler(SimpleHTTPRequestHandler):
                     for r in s.query(FoundReport).all():
                         reports.append({
                             "type": "found",
-                            "title": r.species or "Found animal",
+                            "title": r.species or "Animal encontrado",
                             "desc": f"{r.found_description or ''} ({r.found_location or ''})",
                             "lat": r.latitude,
                             "lon": r.longitude
@@ -266,15 +266,15 @@ def main(page: ft.Page):
 
     def show_login(e=None):
         page.controls.clear()
-        username = ft.TextField(label="Username")
-        password = ft.TextField(label="Password", password=True, can_reveal_password=True)
+        username = ft.TextField(label="Usuário")
+        password = ft.TextField(label="Senha", password=True, can_reveal_password=True)
         msg = ft.Text("", color=ft.Colors.RED)
 
         def do_login(ev):
             uname = username.value.strip()
             pwd = password.value or ""
             if not uname:
-                msg.value = "Enter username"
+                msg.value = "Insira o nome de usuário"
                 page.update()
                 return
             with session_scope() as s:
@@ -283,19 +283,19 @@ def main(page: ft.Page):
                     state["current_user"] = {"id": user.id, "username": user.username}
                     show_home()
                 else:
-                    msg.value = "Invalid username or password"
+                    msg.value = "Usuário ou senha inválidos"
                     page.update()
 
         page.add(ft.Text("Login", size=20), username, password,
-                 ft.Row([ft.ElevatedButton("Login", on_click=do_login),
-                         ft.TextButton("Create account", on_click=show_register)]), msg)
+                 ft.Row([ft.ElevatedButton("Log-in", on_click=do_login),
+                         ft.TextButton("Não tenho uma conta", on_click=show_register)]), msg)
 
     def show_register(e=None):
         page.controls.clear()
-        username = ft.TextField(label="Username")
-        contact = ft.TextField(label="Contact (phone/email)")
-        password = ft.TextField(label="Password", password=True, can_reveal_password=True)
-        password2 = ft.TextField(label="Confirm Password", password=True, can_reveal_password=True)
+        username = ft.TextField(label="Usuário")
+        contact = ft.TextField(label="Contato (telefone/email)")
+        password = ft.TextField(label="Senha", password=True, can_reveal_password=True)
+        password2 = ft.TextField(label="Confirmar senha", password=True, can_reveal_password=True)
         msg = ft.Text("", color=ft.Colors.RED)
 
         def do_register(ev):
@@ -303,17 +303,17 @@ def main(page: ft.Page):
             pwd = password.value or ""
             pwd2 = password2.value or ""
             if not uname:
-                msg.value = "Enter username"
+                msg.value = "Insira o nome de usuário"
                 page.update()
                 return
             if pwd != pwd2 or not pwd:
-                msg.value = "Passwords do not match or empty"
+                msg.value = "As senhas não coincidem ou estão vazias"
                 page.update()
                 return
             with session_scope() as s:
                 existing = s.query(User).filter_by(username=uname).first()
                 if existing:
-                    msg.value = "Username already exists"
+                    msg.value = "Usuário já existe"
                     page.update()
                     return
                 u = User(username=uname, contact=contact.value.strip())
@@ -331,11 +331,11 @@ def main(page: ft.Page):
             show_login()
             return
         header = ft.Text(f"Welcome, {cur['username']}", size=18)
-        btn_lost = ft.ElevatedButton("Register Lost Animal", on_click=show_lost_registration)
-        btn_found = ft.ElevatedButton("Report Found Animal", on_click=show_found_registration)
-        btn_my = ft.ElevatedButton("My posts", on_click=show_my_posts)
-        btn_map = ft.ElevatedButton("Open map (browser)", on_click=show_map)
-        btn_logout = ft.TextButton("Logout", on_click=do_logout)
+        btn_lost = ft.ElevatedButton("Registrar animal perdido", on_click=show_lost_registration)
+        btn_found = ft.ElevatedButton("Registrar animal encontrado", on_click=show_found_registration)
+        btn_my = ft.ElevatedButton("Meus posts", on_click=show_my_posts)
+        btn_map = ft.ElevatedButton("Abrir mapa (browser)", on_click=show_map)
+        btn_logout = ft.TextButton("Sair", on_click=do_logout)
 
         lost_list = ft.ListView(expand=True, spacing=10)
         found_list = ft.ListView(expand=True, spacing=10)
@@ -343,18 +343,18 @@ def main(page: ft.Page):
         with session_scope() as s:
             for a in s.query(LostAnimal).order_by(LostAnimal.id.desc()).all():
                 owner_name = a.owner.username if a.owner else "—"
-                info = f"Owner: {owner_name}\nLost at: {a.lost_location or ''}\nDesc: {a.desc_animal or ''}"
+                info = f"Tutor: {owner_name}\nOnde foi perdido: {a.lost_location or ''}\nDescrição: {a.desc_animal or ''}"
                 if a.latitude and a.longitude:
-                    info += f"\nCoords: {a.latitude:.6f}, {a.longitude:.6f}"
+                    info += f"\nCoordenadas: {a.latitude:.6f}, {a.longitude:.6f}"
                 lost_list.controls.append(ft.Container(ft.ListTile(title=ft.Text(a.name), subtitle=ft.Text(info)), bgcolor=ft.Colors.BLACK12, padding=12, margin=3, border_radius=8))
             for r in s.query(FoundReport).order_by(FoundReport.id.desc()).all():
                 finder_name = r.finder.username if r.finder else "—"
-                info = f"Finder: {finder_name}\nFound at: {r.found_location or ''}\nDesc: {r.found_description or ''}"
+                info = f"Quem encontrou: {finder_name}\nOnde foi encontrado: {r.found_location or ''}\nDescrição: {r.found_description or ''}"
                 if r.latitude and r.longitude:
-                    info += f"\nCoords: {r.latitude:.6f}, {r.longitude:.6f}"
-                found_list.controls.append(ft.Container(ft.ListTile(title=ft.Text(r.species or "Found animal"), subtitle=ft.Text(info)), bgcolor=ft.Colors.INDIGO_ACCENT, padding=12, margin=3, border_radius=8))
+                    info += f"\nCoordenadas: {r.latitude:.6f}, {r.longitude:.6f}"
+                found_list.controls.append(ft.Container(ft.ListTile(title=ft.Text(r.species or "Animal encontrado"), subtitle=ft.Text(info)), bgcolor=ft.Colors.INDIGO_ACCENT, padding=12, margin=3, border_radius=8))
 
-        page.add(header, ft.Row([btn_lost, btn_found, btn_my, btn_map, btn_logout]), ft.Text("Lost animals:"), lost_list, ft.Text("Found reports:"), found_list)
+        page.add(header, ft.Row([btn_lost, btn_found, btn_my, btn_map, btn_logout]), ft.Text("Animais perdidos:"), lost_list, ft.Text("Animais encontrados:"), found_list)
 
     def do_logout(e):
         state["current_user"] = None
@@ -396,7 +396,7 @@ def main(page: ft.Page):
             } for r in founds_rows]
 
         if not losts and not founds:
-            page.add(ft.Text("You have not posted any lost or found reports yet."))
+            page.add(ft.Text("Você não tem posts ainda."))
             page.add(ft.Row([ft.ElevatedButton("Back", on_click=show_home)]))
             return
 
@@ -409,8 +409,8 @@ def main(page: ft.Page):
                 ft.Row([
                     ft.Column([ft.Text(ld['name'], weight=ft.FontWeight.BOLD), ft.Text(info)], expand=True),
                     ft.Column([
-                        ft.ElevatedButton("Edit", on_click=lambda e, aid=ld['id']: show_edit_lost(aid)),
-                        ft.TextButton("Delete", on_click=lambda e, aid=ld['id']: confirm_delete_lost(aid))
+                        ft.ElevatedButton("Editar", on_click=lambda e, aid=ld['id']: show_edit_lost(aid)),
+                        ft.TextButton("Deletar", on_click=lambda e, aid=ld['id']: confirm_delete_lost(aid))
                     ])
                 ]),
                 bgcolor=ft.Colors.BLACK12,
@@ -422,12 +422,12 @@ def main(page: ft.Page):
 
         # build found list items
         for fd in founds:
-            info = f"{fd['species'] or 'Found animal'} — {fd['found_location'] or ''}\n{fd['found_description'] or ''}"
+            info = f"{fd['species'] or 'Animal encontrado'} — {fd['found_location'] or ''}\n{fd['found_description'] or ''}"
             if fd['latitude'] and fd['longitude']:
                 info += f"\nCoords: {fd['latitude']:.6f}, {fd['longitude']:.6f}"
             item = ft.Container(
                 ft.Row([
-                    ft.Column([ft.Text(fd['species'] or "Found animal", weight=ft.FontWeight.BOLD), ft.Text(info)], expand=True),
+                    ft.Column([ft.Text(fd['species'] or "Animal encontrado", weight=ft.FontWeight.BOLD), ft.Text(info)], expand=True),
                     ft.Column([
                         ft.ElevatedButton("Edit", on_click=lambda e, rid=fd['id']: show_edit_found(rid)),
                         ft.TextButton("Delete", on_click=lambda e, rid=fd['id']: confirm_delete_found(rid))
@@ -440,7 +440,7 @@ def main(page: ft.Page):
             )
             my_found_list.controls.append(item)
 
-        page.add(ft.Text("My lost reports:"), my_lost_list, ft.Text("My found reports:"), my_found_list, ft.Row([ft.ElevatedButton("Back", on_click=show_home)]))
+        page.add(ft.Text("Meus animais perdidos"), my_lost_list, ft.Text("Animais que encontrei"), my_found_list, ft.Row([ft.ElevatedButton("Voltar", on_click=show_home)]))
 
     # Edit lost
     def show_edit_lost(lost_id):
@@ -454,7 +454,7 @@ def main(page: ft.Page):
         with session_scope() as s:
             a = s.query(LostAnimal).filter_by(id=lost_id, owner_id=cur["id"]).first()
             if not a:
-                show_snack("Lost report not found or you do not own it.", success=False)
+                show_snack("Registro não encontrado", success=False)
                 show_my_posts()
                 return
             a_data = {
@@ -468,13 +468,13 @@ def main(page: ft.Page):
                 "longitude": a.longitude
             }
 
-        name = ft.TextField(label="Animal name", value=a_data["name"] or "")
-        species = ft.TextField(label="Species (optional)", value=a_data["species"] or "")
-        location = ft.TextField(label="Location", value=a_data["lost_location"] or "")
-        desc = ft.TextField(label="Description (optional)", value=a_data["desc_animal"] or "")
-        contact = ft.TextField(label="Contact (optional)", value=a_data["contact"] or "")
-        lat_field = ft.TextField(label="Latitude (optional)", value=f"{a_data['latitude']:.6f}" if a_data['latitude'] is not None else "")
-        lon_field = ft.TextField(label="Longitude (optional)", value=f"{a_data['longitude']:.6f}" if a_data['longitude'] is not None else "")
+        name = ft.TextField(label="Nome do animal", value=a_data["name"] or "")
+        species = ft.TextField(label="Espécie (opcional)", value=a_data["species"] or "")
+        location = ft.TextField(label="Local", value=a_data["lost_location"] or "")
+        desc = ft.TextField(label="Descrição (opcional)", value=a_data["desc_animal"] or "")
+        contact = ft.TextField(label="Contato (opcional)", value=a_data["contact"] or "")
+        lat_field = ft.TextField(label="Latitude (opcional)", value=f"{a_data['latitude']:.6f}" if a_data['latitude'] is not None else "")
+        lon_field = ft.TextField(label="Longitude (opcional)", value=f"{a_data['longitude']:.6f}" if a_data['longitude'] is not None else "")
         preview_image = ft.Image(src="", width=600, height=300)
         preview_address = ft.Text("", selectable=True)
         msg = ft.Text("")
@@ -484,7 +484,7 @@ def main(page: ft.Page):
                 if lat_field.value.strip() and lon_field.value.strip():
                     lat = float(lat_field.value.strip()); lon = float(lon_field.value.strip())
                     preview_image.src = build_static_map_url(lat, lon)
-                    preview_address.value = reverse_geocode(lat, lon) or "No address found"
+                    preview_address.value = reverse_geocode(lat, lon) or "Endereço não encontrado"
                 else:
                     preview_image.src = ""
                     preview_address.value = ""
@@ -503,20 +503,20 @@ def main(page: ft.Page):
 
         def do_update(ev):
             if not name.value.strip():
-                msg.value = "Name is required"
+                msg.value = "Nome é obrigatório"
                 page.update()
                 return
             try:
                 lat = float(lat_field.value.strip()) if lat_field.value.strip() else None
                 lon = float(lon_field.value.strip()) if lon_field.value.strip() else None
             except:
-                msg.value = "Invalid coordinates"
+                msg.value = "Coordenadas inválidas"
                 page.update()
                 return
             with session_scope() as s:
                 obj = s.query(LostAnimal).filter_by(id=lost_id, owner_id=cur["id"]).first()
                 if not obj:
-                    show_snack("Could not find the report to update.", success=False)
+                    show_snack("Registro não encontrado para alterar", success=False)
                     show_my_posts()
                     return
                 obj.name = name.value.strip()
@@ -527,15 +527,15 @@ def main(page: ft.Page):
                 obj.latitude = lat
                 obj.longitude = lon
                 s.add(obj)
-            show_snack("Lost report updated.")
+            show_snack("Registro atualizado")
             show_my_posts()
 
-        page.add(ft.Text("Edit Lost Report", size=18),
+        page.add(ft.Text("Editar Registro de animal perdido", size=18),
                  name, species, location, desc, contact,
                  ft.Row([lat_field, lon_field]),
-                 ft.Row([ft.ElevatedButton("Refresh preview", on_click=lambda e: update_preview_from_fields()),
-                         ft.ElevatedButton("Save changes", on_click=do_update),
-                         ft.TextButton("Cancel", on_click=lambda e: show_my_posts())]),
+                 ft.Row([ft.ElevatedButton("Atualizar mapa", on_click=lambda e: update_preview_from_fields()),
+                         ft.ElevatedButton("Salvar mudanças", on_click=do_update),
+                         ft.TextButton("Cancelar", on_click=lambda e: show_my_posts())]),
                  preview_image, preview_address, msg)
 
         # initial preview
@@ -553,7 +553,7 @@ def main(page: ft.Page):
         with session_scope() as s:
             r = s.query(FoundReport).filter_by(id=found_id, finder_id=cur["id"]).first()
             if not r:
-                show_snack("Found report not found or you do not own it.", success=False)
+                show_snack("Registro não encontrado", success=False)
                 show_my_posts()
                 return
             r_data = {
@@ -566,12 +566,12 @@ def main(page: ft.Page):
                 "longitude": r.longitude
             }
 
-        species = ft.TextField(label="Species (optional)", value=r_data["species"] or "")
-        location = ft.TextField(label="Location", value=r_data["found_location"] or "")
-        date = ft.TextField(label="Date (optional)", value=r_data["found_date"] or "")
-        desc = ft.TextField(label="Description", value=r_data["found_description"] or "")
-        lat_field = ft.TextField(label="Latitude (optional)", value=f"{r_data['latitude']:.6f}" if r_data['latitude'] is not None else "")
-        lon_field = ft.TextField(label="Longitude (optional)", value=f"{r_data['longitude']:.6f}" if r_data['longitude'] is not None else "")
+        species = ft.TextField(label="Espécia (opcional)", value=r_data["species"] or "")
+        location = ft.TextField(label="Local", value=r_data["found_location"] or "")
+        date = ft.TextField(label="Data (opcional)", value=r_data["found_date"] or "")
+        desc = ft.TextField(label="Descrição", value=r_data["found_description"] or "")
+        lat_field = ft.TextField(label="Latitude (opcional)", value=f"{r_data['latitude']:.6f}" if r_data['latitude'] is not None else "")
+        lon_field = ft.TextField(label="Longitude (opcional)", value=f"{r_data['longitude']:.6f}" if r_data['longitude'] is not None else "")
         preview_image = ft.Image(src="", width=600, height=300)
         preview_address = ft.Text("", selectable=True)
         msg = ft.Text("")
@@ -581,7 +581,7 @@ def main(page: ft.Page):
                 if lat_field.value.strip() and lon_field.value.strip():
                     lat = float(lat_field.value.strip()); lon = float(lon_field.value.strip())
                     preview_image.src = build_static_map_url(lat, lon)
-                    preview_address.value = reverse_geocode(lat, lon) or "No address found"
+                    preview_address.value = reverse_geocode(lat, lon) or "Endereço não encontrado"
                 else:
                     preview_image.src = ""
                     preview_address.value = ""
@@ -603,13 +603,13 @@ def main(page: ft.Page):
                 lat = float(lat_field.value.strip()) if lat_field.value.strip() else None
                 lon = float(lon_field.value.strip()) if lon_field.value.strip() else None
             except:
-                msg.value = "Invalid coordinates"
+                msg.value = "Coordenadas inválidas"
                 page.update()
                 return
             with session_scope() as s:
                 obj = s.query(FoundReport).filter_by(id=found_id, finder_id=cur["id"]).first()
                 if not obj:
-                    show_snack("Could not find the report to update.", success=False)
+                    show_snack("Registro não encontrado para alterar", success=False)
                     show_my_posts()
                     return
                 obj.species = species.value.strip() or None
@@ -625,9 +625,9 @@ def main(page: ft.Page):
         page.add(ft.Text("Edit Found Report", size=18),
                  species, location, date, desc,
                  ft.Row([lat_field, lon_field]),
-                 ft.Row([ft.ElevatedButton("Refresh preview", on_click=lambda e: update_preview_from_fields()),
-                         ft.ElevatedButton("Save changes", on_click=do_update),
-                         ft.TextButton("Cancel", on_click=lambda e: show_my_posts())]),
+                 ft.Row([ft.ElevatedButton("Atualizar mapa", on_click=lambda e: update_preview_from_fields()),
+                         ft.ElevatedButton("Salvar mudanças", on_click=do_update),
+                         ft.TextButton("Cancelar", on_click=lambda e: show_my_posts())]),
                  preview_image, preview_address, msg)
 
         update_preview_from_fields()
@@ -635,11 +635,11 @@ def main(page: ft.Page):
     # Delete confirmation and handlers
     def confirm_delete_lost(lost_id):
         dlg = ft.AlertDialog(
-            title=ft.Text("Delete lost report?"),
-            content=ft.Text("This action cannot be undone."),
+            title=ft.Text("Deletar registro de animal perdido?"),
+            content=ft.Text("Esta ação não pode ser desfeita."),
             actions=[
-                ft.TextButton("Cancel", on_click=lambda e: close_dialog()),
-                ft.ElevatedButton("Delete", bgcolor=ft.Colors.RED, on_click=lambda e: do_delete_lost(lost_id))
+                ft.TextButton("Cancelar", on_click=lambda e: close_dialog()),
+                ft.ElevatedButton("Deletar", bgcolor=ft.Colors.RED, on_click=lambda e: do_delete_lost(lost_id))
             ],
             actions_alignment=ft.MainAxisAlignment.END
         )
@@ -663,11 +663,11 @@ def main(page: ft.Page):
             _do_delete_lost(lid)
 
         dlg = ft.AlertDialog(
-            title=ft.Text("Delete lost report?"),
-            content=ft.Text("This action cannot be undone."),
+            title=ft.Text("Deletar registro de animal perdido?"),
+            content=ft.Text("Esta ação não pode ser desfeita."),
             actions=[
-                ft.TextButton("Cancel", on_click=lambda e: close_dialog()),
-                ft.ElevatedButton("Delete", bgcolor=ft.Colors.RED, on_click=on_delete_click)
+                ft.TextButton("Cancelar", on_click=lambda e: close_dialog()),
+                ft.ElevatedButton("Deletar", bgcolor=ft.Colors.RED, on_click=on_delete_click)
             ],
             actions_alignment=ft.MainAxisAlignment.END
         )
@@ -680,7 +680,7 @@ def main(page: ft.Page):
         close_dialog()
         cur = state.get("current_user")
         if not cur:
-            show_snack("You must be logged in to delete posts.", success=False)
+            show_snack("Você precisa estar logado para deletar posts", success=False)
             show_login()
             return
 
@@ -689,10 +689,10 @@ def main(page: ft.Page):
                 # load by primary key and verify ownership
                 obj = s.get(LostAnimal, int(lost_id))
                 if not obj or obj.owner_id != cur["id"]:
-                    show_snack("Could not find the lost report or you do not own it.", success=False)
+                    show_snack("Registro não encontrado", success=False)
                     return
                 s.delete(obj)
-            show_snack("Lost report deleted.")
+            show_snack("Registro deletado.")
         except Exception as ex:
             print("Error deleting lost report:", ex)
             show_snack("Failed to delete lost report.", success=False)
@@ -704,11 +704,11 @@ def main(page: ft.Page):
             _do_delete_found(fid)
 
         dlg = ft.AlertDialog(
-            title=ft.Text("Delete found report?"),
-            content=ft.Text("This action cannot be undone."),
+            title=ft.Text("Deletar registro de animal encontrado?"),
+            content=ft.Text("Esta ação não pode ser desfeita."),
             actions=[
-                ft.TextButton("Cancel", on_click=lambda e: close_dialog()),
-                ft.ElevatedButton("Delete", bgcolor=ft.Colors.RED, on_click=on_delete_click)
+                ft.TextButton("Cancelar", on_click=lambda e: close_dialog()),
+                ft.ElevatedButton("Deletar", bgcolor=ft.Colors.RED, on_click=on_delete_click)
             ],
             actions_alignment=ft.MainAxisAlignment.END
         )
@@ -720,7 +720,7 @@ def main(page: ft.Page):
         close_dialog()
         cur = state.get("current_user")
         if not cur:
-            show_snack("You must be logged in to delete posts.", success=False)
+            show_snack("Você precisa estar logado para deletar posts", success=False)
             show_login()
             return
 
@@ -728,10 +728,10 @@ def main(page: ft.Page):
             with session_scope() as s:
                 obj = s.get(FoundReport, int(found_id))
                 if not obj or obj.finder_id != cur["id"]:
-                    show_snack("Could not find the found report or you do not own it.", success=False)
+                    show_snack("Registro não encontrado.", success=False)
                     return
                 s.delete(obj)
-            show_snack("Found report deleted.")
+            show_snack("Registro deletado.")
         except Exception as ex:
             print("Error deleting found report:", ex)
             show_snack("Failed to delete found report.", success=False)
@@ -740,8 +740,8 @@ def main(page: ft.Page):
 
     def confirm_delete_found(found_id):
         dlg = ft.AlertDialog(
-            title=ft.Text("Delete found report?"),
-            content=ft.Text("This action cannot be undone."),
+            title=ft.Text("Deletar registro de animal encontrado?"),
+            content=ft.Text("Esta ação não pode ser desfeita."),
             actions=[
                 ft.TextButton("Cancel", on_click=lambda e: close_dialog()),
                 ft.ElevatedButton("Delete", bgcolor=ft.Colors.RED, on_click=lambda e: do_delete_found(found_id))
@@ -758,11 +758,11 @@ def main(page: ft.Page):
         with session_scope() as s:
             obj = s.query(FoundReport).filter_by(id=found_id, finder_id=cur["id"]).first()
             if not obj:
-                show_snack("Could not find the found report to delete.", success=False)
+                show_snack("Registro não encontrado", success=False)
                 show_my_posts()
                 return
             s.delete(obj)
-        show_snack("Found report deleted.")
+        show_snack("Registro deletado.")
         show_my_posts()
 
     def close_dialog():
@@ -777,13 +777,13 @@ def main(page: ft.Page):
         if not cur:
             show_login()
             return
-        name = ft.TextField(label="Animal name")
-        species = ft.TextField(label="Species (optional)")
-        location = ft.TextField(label="Location where it was lost (address or description)")
-        desc = ft.TextField(label="Description (optional)")
-        contact = ft.TextField(label="Contact (optional)")
-        lat_field = ft.TextField(label="Latitude (optional)")
-        lon_field = ft.TextField(label="Longitude (optional)")
+        name = ft.TextField(label="Nome do animal")
+        species = ft.TextField(label="Espécie (opcional)")
+        location = ft.TextField(label="Onde foi perdido (endereço ou descrição)")
+        desc = ft.TextField(label="Descrição do animal (opcional)")
+        contact = ft.TextField(label="Contato (opcional)")
+        lat_field = ft.TextField(label="Latitude (opcional)")
+        lon_field = ft.TextField(label="Longitude (opcional)")
         msg = ft.Text("")
 
         preview_image = ft.Image(src="", width=600, height=300)
@@ -813,7 +813,7 @@ def main(page: ft.Page):
 
         def do_register_lost(ev):
             if not name.value.strip():
-                msg.value = "Name is required"
+                msg.value = "Nome é obrigatório"
                 page.update()
                 return
             # if lat/lon provided use them; otherwise try geocoding
@@ -823,7 +823,7 @@ def main(page: ft.Page):
                     lat = float(lat_field.value.strip())
                     lon = float(lon_field.value.strip())
                 except:
-                    msg.value = "Invalid coordinates format"
+                    msg.value = "Formato de coordenadas inválido"
                     page.update()
                     return
             else:
@@ -841,7 +841,7 @@ def main(page: ft.Page):
                     longitude=lon
                 )
                 s.add(la)
-            show_snack("Lost animal registered.")
+            show_snack("Animal perdido registrado.")
             # clear form fields
             name.value = species.value = location.value = desc.value = contact.value = ""
             lat_field.value = lon_field.value = ""
@@ -852,11 +852,11 @@ def main(page: ft.Page):
             lat = LAST_PICK.get("lat")
             lon = LAST_PICK.get("lon")
             if lat is None or lon is None:
-                msg.value = "No picked coordinates yet — click on the map first."
+                msg.value = "Coordenadas não selecionadas ainda — clique no mapa primeiro."
             else:
                 lat_field.value = f"{lat:.6f}"
                 lon_field.value = f"{lon:.6f}"
-                msg.value = "Picked coordinates imported into the form."
+                msg.value = "Coordenadas importadas para o formulário."
                 # automatically refresh preview and reverse-geocode
                 update_preview_from_fields()
             page.update()
@@ -864,10 +864,10 @@ def main(page: ft.Page):
         page.add(ft.Text("Register Lost Animal", size=18),
                  name, species, location, desc, contact,
                  ft.Row([lat_field, lon_field]),
-                 ft.Row([ft.ElevatedButton("Fetch picked coords", on_click=fetch_picked_coords),
-                         ft.ElevatedButton("Refresh preview", on_click=lambda e: (update_preview_from_fields())),
-                         ft.ElevatedButton("Save", on_click=do_register_lost),
-                         ft.TextButton("Back", on_click=show_home)]),
+                 ft.Row([ft.ElevatedButton("Atualizar coordenadas selecionadas", on_click=fetch_picked_coords),
+                         ft.ElevatedButton("Atualizar mapa", on_click=lambda e: (update_preview_from_fields())),
+                         ft.ElevatedButton("Salvar", on_click=do_register_lost),
+                         ft.TextButton("Voltar", on_click=show_home)]),
                  preview_image,
                  preview_address,
                  msg)
@@ -878,12 +878,12 @@ def main(page: ft.Page):
         if not cur:
             show_login()
             return
-        species = ft.TextField(label="Species (optional)")
-        location = ft.TextField(label="Location found (address or description)")
-        date = ft.TextField(label="Date (optional)")
-        desc = ft.TextField(label="Description")
-        lat_field = ft.TextField(label="Latitude (optional)")
-        lon_field = ft.TextField(label="Longitude (optional)")
+        species = ft.TextField(label="Epécie (opcional)")
+        location = ft.TextField(label="Onde foi encontrado (endereço ou descrição)")
+        date = ft.TextField(label="Data (opcional)")
+        desc = ft.TextField(label="Descrição do animal")
+        lat_field = ft.TextField(label="Latitude (opcional)")
+        lon_field = ft.TextField(label="Longitude (opcional)")
         msg = ft.Text("")
 
         preview_image = ft.Image(src="", width=600, height=300)
@@ -918,7 +918,7 @@ def main(page: ft.Page):
                     lat = float(lat_field.value.strip())
                     lon = float(lon_field.value.strip())
                 except:
-                    msg.value = "Invalid coordinates format"
+                    msg.value = "Formato de coordenadas inválido"
                     page.update()
                     return
             else:
@@ -935,7 +935,7 @@ def main(page: ft.Page):
                     longitude=lon
                 )
                 s.add(fr)
-            show_snack("Found report saved.")
+            show_snack("Registro de animal encontrado salvo.")
             # clear fields
             species.value = location.value = date.value = desc.value = ""
             lat_field.value = lon_field.value = ""
@@ -946,21 +946,21 @@ def main(page: ft.Page):
             lat = LAST_PICK.get("lat")
             lon = LAST_PICK.get("lon")
             if lat is None or lon is None:
-                msg.value = "No picked coordinates yet — click on the map first."
+                msg.value = "Coordenadas não selecionadas ainda — clique no mapa primeiro."
             else:
                 lat_field.value = f"{lat:.6f}"
                 lon_field.value = f"{lon:.6f}"
-                msg.value = "Picked coordinates imported into the form."
+                msg.value = "Coordenadas importadas para o formulário."
                 update_preview_from_fields()
             page.update()
 
-        page.add(ft.Text("Report Found Animal", size=18),
+        page.add(ft.Text("Registrar animal encontrado", size=18),
                  species, location, date, desc,
                  ft.Row([lat_field, lon_field]),
-                 ft.Row([ft.ElevatedButton("Fetch picked coords", on_click=fetch_picked_coords),
-                         ft.ElevatedButton("Refresh preview", on_click=lambda e: (update_preview_from_fields())),
-                         ft.ElevatedButton("Save", on_click=do_register_found),
-                         ft.TextButton("Back", on_click=show_home)]),
+                 ft.Row([ft.ElevatedButton("Atualizar coordenadas selecionadas", on_click=fetch_picked_coords),
+                         ft.ElevatedButton("Atualizar mapa", on_click=lambda e: (update_preview_from_fields())),
+                         ft.ElevatedButton("Salvar", on_click=do_register_found),
+                         ft.TextButton("Voltar", on_click=show_home)]),
                  preview_image,
                  preview_address,
                  msg)
@@ -973,10 +973,10 @@ def main(page: ft.Page):
         except Exception as ex:
             print("Failed to open browser:", ex)
         page.controls.clear()
-        page.add(ft.Text("Map opened in your system browser.", size=18),
-                 ft.Text("Click on the map to pick coordinates. Then return to the app and press 'Fetch picked coords' on the registration page.", selectable=True),
-                 ft.Row([ft.ElevatedButton("Back", on_click=show_home),
-                         ft.ElevatedButton("Open map in browser", on_click=lambda e: webbrowser.open(map_url))]),
+        page.add(ft.Text("Mapa aberto no seu navegador", size=18),
+                 ft.Text("Clique no mapa, retorne ao app e então lique em 'atualizar coordenadas'", selectable=True),
+                 ft.Row([ft.ElevatedButton("Voltar", on_click=show_home),
+                         ft.ElevatedButton("Abrir mapa no navegador", on_click=lambda e: webbrowser.open(map_url))]),
                  ft.Text(f"Map URL: {map_url}", selectable=True))
 
     # start UI
